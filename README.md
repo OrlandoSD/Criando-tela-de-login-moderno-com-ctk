@@ -18,8 +18,8 @@ Este é um projeto simples de sistema de login e cadastro desenvolvido em Python
 1. Clone este repositório para sua máquina local:
 
     ```bash
-    git clone https://github.com/seu-usuario/nome-do-repositorio.git
-    cd nome-do-repositorio
+    [git clone https://github.com/seu-usuario/nome-do-repositorio.git
+    cd nome-do-repositorio](https://github.com/OrlandoSD/Criando-tela-de-login-moderno-com-ctk.git)
     ```
 
 2. Instale as dependências necessárias:
