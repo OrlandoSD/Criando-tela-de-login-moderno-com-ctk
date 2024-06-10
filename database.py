@@ -10,8 +10,18 @@ def inicializar_banco():
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nome TEXT NOT NULL,
         email TEXT NOT NULL UNIQUE,
-        senha TEXT NOT NULL
+        senha TEXT NOT NULL,
+        cSenha TEXT NOT NULL
     )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS radios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nomeRadio TEXT NOT NULL,
+            serialRadio TEXT NOT NULL,
+            localRadio TEXT NOT NULL,
+            status TEXT NOT NULL
+        )
     ''')
     conn.commit()
     conn.close()
@@ -47,6 +57,8 @@ def verificar_login(email, senha):
             return False
     except sqlite3.Error as e:
         messagebox.showerror(title="Erro", message=f"Erro ao verificar login: {e}")
+
         return False
+
     finally:
         conn.close()

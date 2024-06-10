@@ -2,6 +2,7 @@ from tkinter import PhotoImage, RIGHT
 from tkinter import messagebox
 import customtkinter as ctk
 import database  # Importando o arquivo database
+import tela_principal  # Importando o arquivo da tela principal
 
 # Inicializar o banco de dados ao iniciar a aplicação
 database.inicializar_banco()
@@ -62,6 +63,8 @@ class Application():
             senha = self.password_entry.get()
             if database.verificar_login(email, senha):
                 messagebox.showinfo(title="Login", message="Login efetuado com sucesso!")
+                self.janela.destroy()
+                tela_principal.Application()
             else:
                 messagebox.showerror(title="Erro", message="Email ou senha incorretos!")
 
