@@ -1,6 +1,7 @@
 import customtkinter as ctk
 from tkinter import messagebox
-import database
+import sqlite3 
+
 
 class Application():
     def __init__(self):
@@ -25,6 +26,9 @@ class Application():
 
         cadastrar_radio_button = ctk.CTkButton(master=self.janela, text="Cadastrar Rádio", width=200, command=self.janela_cadastrar_radio)
         cadastrar_radio_button.pack(pady=10)
+        
+        pesquisar_radio_button = ctk.CTkButton(master=self.janela, text="Pesquisar Rádio", width=200, command=self.janela_pesquisar_radio)
+        pesquisar_radio_button.pack(pady=10)
 
     def janela_cadastrar_radio(self):
         cadastrar_radio_janela = ctk.CTkToplevel(self.janela)
@@ -53,8 +57,7 @@ class Application():
             status_radio = self.status_radio_entry.get()
 
             if nome_radio and serial_radio and local_radio and status_radio:
-                # Salvando no banco de dados
-                conn = sqlite3.connect('usuarios.db')
+                conn = sqlite3.connect('Sistema.db')
                 cursor = conn.cursor()
                 cursor.execute('''
                     INSERT INTO radios (nomeRadio, serialRadio, localRadio, status)
@@ -70,7 +73,110 @@ class Application():
         salvar_button = ctk.CTkButton(master=cadastrar_radio_janela, text="Salvar", width=200, command=save_radio)
         salvar_button.pack(pady=10)
 
+    def janela_pesquisar_radio(self):
+        pesquisar_radio_janela = ctk.CTkToplevel(self.janela)
+        pesquisar_radio_janela.geometry("400x300")
+        pesquisar_radio_janela.title("Pesquisar Rádio")
+
+        title_label = ctk.CTkLabel(master=pesquisar_radio_janela, text="Pesquisar Rádio", font=("Roboto", 18), text_color="white")
+        title_label.pack(pady=20)
+
+        self.serial_pesquisa_entry = ctk.CTkEntry(master=pesquisar_radio_janela, placeholder_text="Serial do Rádio", width=300, font=("Roboto", 14))
+        self.serial_pesquisa_entry.pack(pady=5)
+
+        def search_radio():
+            serial_pesquisa = self.serial_pesquisa_entry.get()
+            if serial_pesquisa:
+                conn = sqlite3.connect('Sistema.db')
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT * FROM radios WHERE serialRadio=?
+                ''', (serial_pesquisa,))
+                radio = cursor.fetchone()
+                conn.close()
+                if radio:
+                    resultado_label = ctk.CTkLabel(master=pesquisar_radio_janela, text=f"Nome: {radio[1]}\nSerial: {radio[2]}\nLocal: {radio[3]}\nStatus: {radio[4]}", font=("Roboto", 14), text_color="white")
+                    resultado_label.pack(pady=10)
+                    
+                    editar_button = ctk.CTkButton(master=pesquisar_radio_janela, text="Editar", width=100, command=lambda: self.janela_editar_radio(radio[0]))
+                    editar_button.pack(pady=5)
+                    
+                    excluir_button = ctk.CTkButton(master=pesquisar_radio_janela, text="Excluir", width=100, command=lambda: self.excluir_radio(radio[0], pesquisar_radio_janela))
+                    excluir_button.pack(pady=5)
+                    
+                else:
+                    messagebox.showerror(title="Erro", message="Rádio não encontrado!")
+            else:
+                messagebox.showerror(title="Erro", message="Preencha o campo de serial!")
+
+        pesquisar_button = ctk.CTkButton(master=pesquisar_radio_janela, text="Pesquisar", width=200, command=search_radio)
+        pesquisar_button.pack(pady=10)
+
+    def janela_editar_radio(self, radio_id):
+        editar_radio_janela = ctk.CTkToplevel(self.janela)
+        editar_radio_janela.geometry("400x300")
+        editar_radio_janela.title("Editar Rádio")
+
+        conn = sqlite3.connect('Sistema.db')
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT * FROM radios WHERE id=?
+        ''', (radio_id,))
+        radio = cursor.fetchone()
+        conn.close()
+
+        title_label = ctk.CTkLabel(master=editar_radio_janela, text="Editar Rádio", font=("Roboto", 18), text_color="white")
+        title_label.pack(pady=20)
+
+        self.nome_radio_entry = ctk.CTkEntry(master=editar_radio_janela, placeholder_text="Nome do Rádio", width=300, font=("Roboto", 14))
+        self.nome_radio_entry.insert(0, radio[1])
+        self.nome_radio_entry.pack(pady=5)
+
+        self.serial_radio_entry = ctk.CTkEntry(master=editar_radio_janela, placeholder_text="Serial do Rádio", width=300, font=("Roboto", 14))
+        self.serial_radio_entry.insert(0, radio[2])
+        self.serial_radio_entry.pack(pady=5)
+
+        self.local_radio_entry = ctk.CTkEntry(master=editar_radio_janela, placeholder_text="Local do Rádio", width=300, font=("Roboto", 14))
+        self.local_radio_entry.insert(0, radio[3])
+        self.local_radio_entry.pack(pady=5)
+
+        self.status_radio_entry = ctk.CTkEntry(master=editar_radio_janela, placeholder_text="Status do Rádio", width=300, font=("Roboto", 14))
+        self.status_radio_entry.insert(0, radio[4])
+        self.status_radio_entry.pack(pady=5)
+
+        def update_radio():
+            nome_radio = self.nome_radio_entry.get()
+            serial_radio = self.serial_radio_entry.get()
+            local_radio = self.local_radio_entry.get()
+            status_radio = self.status_radio_entry.get()
+
+            if nome_radio and serial_radio and local_radio and status_radio:
+                conn = sqlite3.connect('Sistema.db')
+                cursor = conn.cursor()
+                cursor.execute('''
+                    UPDATE radios SET nomeRadio=?, serialRadio=?, localRadio=?, status=? WHERE id=?
+                ''', (nome_radio, serial_radio, local_radio, status_radio, radio_id))
+                conn.commit()
+                conn.close()
+                messagebox.showinfo(title="Atualização", message="Rádio atualizado com sucesso!")
+                editar_radio_janela.destroy()
+            else:
+                messagebox.showerror(title="Erro", message="Preencha todos os campos!")
+
+        salvar_button = ctk.CTkButton(master=editar_radio_janela, text="Salvar", width=200, command=update_radio)
+        salvar_button.pack(pady=10)
+
+    def excluir_radio(self, radio_id, janela):
+        conn = sqlite3.connect('Sistema.db')
+        cursor = conn.cursor()
+        cursor.execute('''
+            DELETE FROM radios WHERE id=?
+        ''', (radio_id,))
+        conn.commit()
+        conn.close()
+        messagebox.showinfo(title="Exclusão", message="Rádio excluído com sucesso!")
+        janela.destroy()
+
 # Executar apenas se este arquivo for o principal
 if __name__ == "__main__":
     Application()
-
