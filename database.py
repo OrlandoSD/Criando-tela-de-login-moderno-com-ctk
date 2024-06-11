@@ -1,67 +1,41 @@
 import sqlite3
-from tkinter import messagebox
 
-# Função para conectar ao banco de dados e criar a tabela se ela não existir
 def inicializar_banco():
-   
-    conn = sqlite3.connect('Sistema.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS radios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nomeRadio TEXT NOT NULL,
-            serialRadio TEXT NOT NULL,
-            localRadio TEXT NOT NULL,
-            status TEXT NOT NULL
-        )
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    # Criação da tabela de usuários
+    c.execute('''
+    CREATE TABLE IF NOT EXISTS usuarios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nome TEXT NOT NULL,
+        email TEXT NOT NULL,
+        senha TEXT NOT NULL
+    )
+    ''')
+    # Criação da tabela de rádios
+    c.execute('''
+    CREATE TABLE IF NOT EXISTS radios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nome TEXT NOT NULL,
+        cidade TEXT NOT NULL,
+        estado TEXT NOT NULL,
+        frequencia REAL NOT NULL
+    )
     ''')
     conn.commit()
     conn.close()
-    
-def save_radio(nomeRadio, serialRadio, localRadio, status):
-    conn = sqlite3.connect('Sistema.db')
-    cursor = conn.cursor()
-    try:
-        cursor.execute("INSERT INTO radios (nomeRadio, serialRadio, localRadio, status) VALUES (?, ?, ?, ?)", (nomeRadio, serialRadio, localRadio, status))
-        conn.commit()
-    except sqlite3.Error as e:
-        print("Erro ao inserir rádio:", e)
-    finally:
-        conn.close()
-        
-# Função para cadastrar um novo usuário
-def cadastrar_usuario(nome, email, senha, cSenha):
-    conn = sqlite3.connect('Sistema.db')
-    cursor = conn.cursor()
-    try:
-        cursor.execute('''
-        INSERT INTO usuarios (nome, email, senha, cSenha) VALUES (?, ?, ?,?)
-        ''', (nome, email, senha, cSenha))
-        conn.commit()
-        messagebox.showinfo(title="Cadastro", message="Usuário cadastrado com sucesso!")
-    except sqlite3.IntegrityError:
-        messagebox.showerror(title="Erro", message="Email já cadastrado!")
-    finally:
-        conn.close()
 
-# Função para verificar login
-def verificar_login(nome, senha):
-    conn = sqlite3.connect('Sistema.db')
-    cursor = conn.cursor()
-    try:
-        cursor.execute('''
-        SELECT * FROM usuarios WHERE nome=? AND senha=?
-        ''', (nome, senha))
-        usuario = cursor.fetchone()
-        conn.close()
-        if usuario:
-            return True
-        else:
-            return False
-    except sqlite3.Error as e:
-        messagebox.showerror(title="Erro", message=f"Erro ao verificar login: {e}")
+def cadastrar_usuario(nome, email, senha):
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    c.execute('INSERT INTO usuarios (nome, email, senha) VALUES (?, ?, ?)', (nome, email, senha))
+    conn.commit()
+    conn.close()
 
-        return False
-
-    finally:
-        conn.close()
+def verificar_login(email, senha):
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    c.execute('SELECT * FROM usuarios WHERE email=? AND senha=?', (email, senha))
+    resultado = c.fetchone()
+    conn.close()
+    return resultado is not None

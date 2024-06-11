@@ -61,12 +61,15 @@ class Application():
         def login():
             email = self.username_entry.get()
             senha = self.password_entry.get()
-            if database.verificar_login(email, senha):
-                messagebox.showinfo(title="Login", message="Login efetuado com sucesso!")
-                self.janela.destroy()
-                tela_principal.Application()
-            else:
-                messagebox.showerror(title="Erro", message="Email ou senha incorretos!")
+            try:
+                if database.verificar_login(email, senha):
+                    messagebox.showinfo(title="Login", message="Login efetuado com sucesso!")
+                    self.janela.destroy()
+                    tela_principal.Application()
+                else:
+                    messagebox.showerror(title="Erro", message="Email ou senha incorretos!")
+            except Exception as e:
+                messagebox.showerror(title="Erro", message=f"Erro ao verificar login: {e}")
 
         login_button = ctk.CTkButton(master=login_frame, text="LOGIN", width=300, command=login).place(x=25, y=285)
 
@@ -113,7 +116,11 @@ class Application():
                 csenha = self.reg_cPassword_entry.get()
 
                 if senha == csenha:
-                    database.cadastrar_usuario(nome, email, senha)
+                    try:
+                        database.cadastrar_usuario(nome, email, senha)
+                        messagebox.showinfo(title="Sucesso", message="Usuário cadastrado com sucesso!")
+                    except Exception as e:
+                        messagebox.showerror(title="Erro", message=f"Erro ao cadastrar usuário: {e}")
                 else:
                     messagebox.showerror(title="Erro", message="As senhas não coincidem!")
 
@@ -122,4 +129,6 @@ class Application():
         register_span = ctk.CTkLabel(master=login_frame, text="se não tem uma conta").place(x=25, y=325)
         register_button = ctk.CTkButton(master=login_frame, text="Cadastre-se", width=150, fg_color="green", hover_color="#2D9334", command=tela_register).place(x=175, y=325)
 
-Application()
+if __name__ == "__main__":
+    database.inicializar_banco()
+    app = Application()

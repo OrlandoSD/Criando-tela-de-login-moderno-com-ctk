@@ -1,9 +1,8 @@
 import customtkinter as ctk
 from tkinter import messagebox
-import sqlite3 
+import sqlite3
 
-
-class Application():
+class Application:
     def __init__(self):
         self.janela = ctk.CTk()
         self.tema()
@@ -75,7 +74,7 @@ class Application():
 
     def janela_pesquisar_radio(self):
         pesquisar_radio_janela = ctk.CTkToplevel(self.janela)
-        pesquisar_radio_janela.geometry("400x300")
+        pesquisar_radio_janela.geometry("400x470")
         pesquisar_radio_janela.title("Pesquisar Rádio")
 
         title_label = ctk.CTkLabel(master=pesquisar_radio_janela, text="Pesquisar Rádio", font=("Roboto", 18), text_color="white")

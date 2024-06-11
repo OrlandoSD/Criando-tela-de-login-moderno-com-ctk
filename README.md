@@ -1,7 +1,7 @@
 # Criando-tela-de-login-moderno-com-ctk
 Sistema de login moderno utilizando #Python #Tkinter #sqlite3:
 
-Este é um projeto simples de sistema de login e cadastro desenvolvido em Python usando `customtkinter` para a interface gráfica e SQLite para o banco de dados. 
+Este é um projeto simples de sistema de login e cadastro desenvolvido em Python usando `customtkinter` para a interface gráfica e SQLite para o banco de dados.
 
 ## Funcionalidades
 
