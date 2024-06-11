@@ -1,6 +1,7 @@
-from tkinter import PhotoImage, RIGHT
+from tkinter import RIGHT
 from tkinter import messagebox
 import customtkinter as ctk
+from PIL import Image, ImageTk  # Importando Pillow para manipulação de imagem
 import database  # Importando o arquivo database
 import tela_principal  # Importando o arquivo da tela principal
 
@@ -29,9 +30,21 @@ class Application():
 
     def janela_login(self):
         # Trabalhando com a imagem da tela
-        img = PhotoImage(file="login.png")
-        label_img = ctk.CTkLabel(master=janela, image=img, text=None)
-        label_img.place(x=25, y=65)
+        image_path = "login.png"
+        image = Image.open(image_path)
+
+        # Redimensionar a imagem para um tamanho adequado (exemplo: 250x250 pixels)
+        image = image.resize((250, 250), Image.Resampling.LANCZOS)
+
+        # Convertendo a imagem para um formato que o CTkImage possa usar
+        tk_image = ImageTk.PhotoImage(image)
+
+        # Manter a referência à imagem
+        self.tk_image = tk_image
+
+        # Adicionando a imagem diretamente na janela, sem frame
+        label_img = ctk.CTkLabel(master=janela, image=tk_image, text=None)
+        label_img.place(x=25, y=75)  # Ajustando a posição da imagem
 
         title_label = ctk.CTkLabel(master=janela, text="Entrar com seu login e senha", font=("Roboto", 18), text_color="white")
         title_label.place(x=60, y=10)

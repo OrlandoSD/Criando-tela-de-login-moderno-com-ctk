@@ -1,6 +1,8 @@
 import customtkinter as ctk
 from tkinter import messagebox
 import sqlite3
+import tkinter as tk
+from tkinter import ttk
 
 class Application:
     def __init__(self):
@@ -28,6 +30,30 @@ class Application:
         
         pesquisar_radio_button = ctk.CTkButton(master=self.janela, text="Pesquisar Rádio", width=200, command=self.janela_pesquisar_radio)
         pesquisar_radio_button.pack(pady=10)
+
+
+        # Treeview para exibir resultados de pesquisa
+        self.treeview_pesquisa = ttk.Treeview(self.janela, columns=("Nome", "Serial", "Local", "Status"))
+        self.treeview_pesquisa.heading("#0", text="ID")
+        self.treeview_pesquisa.heading("Nome", text="Nome")
+        self.treeview_pesquisa.heading("Serial", text="Serial")
+        self.treeview_pesquisa.heading("Local", text="Local")
+        self.treeview_pesquisa.heading("Status", text="Status")
+
+        def mostrar_tabela_pesquisa(self):
+            # Limpar tabela antes de preencher com novos resultados
+            self.treeview_pesquisa.delete(*self.treeview_pesquisa.get_children())
+
+            # Preencher a tabela com os resultados da pesquisa
+            conn = sqlite3.connect('Sistema.db')
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM radios')
+            for row in cursor.fetchall():
+                self.treeview_pesquisa.insert('', 'end', text=row[0], values=(row[1], row[2], row[3], row[4]))
+            conn.close()
+
+            # Mostrar a tabela na tela principal
+            self.treeview_pesquisa.pack(pady=10, fill=tk.BOTH, expand=True)
 
     def janela_cadastrar_radio(self):
         cadastrar_radio_janela = ctk.CTkToplevel(self.janela)
@@ -71,6 +97,23 @@ class Application:
 
         salvar_button = ctk.CTkButton(master=cadastrar_radio_janela, text="Salvar", width=200, command=save_radio)
         salvar_button.pack(pady=10)
+
+    def mostrar_frame_pesquisa(self):
+        # Limpar a Treeview antes de preencher com novos resultados
+        self.treeview_pesquisa.delete(*self.treeview_pesquisa.get_children())
+        
+        # Preencher a Treeview com os resultados da pesquisa
+        conn = sqlite3.connect('Sistema.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM radios')
+        for row in cursor.fetchall():
+            self.treeview_pesquisa.insert('', 'end', text=row[0], values=(row[1], row[2], row[3], row[4]))
+        conn.close()
+        
+        self.frame_cadastro.pack_forget()
+        self.frame_pesquisa.pack(fill=ctk.BOTH, expand=true)
+        self.frame_pesquisa.update()
+        self.janela_pesquisar_radio()
 
     def janela_pesquisar_radio(self):
         pesquisar_radio_janela = ctk.CTkToplevel(self.janela)
