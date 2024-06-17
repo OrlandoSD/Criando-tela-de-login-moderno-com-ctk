@@ -9,6 +9,7 @@ class Application:
         self.janela = ctk.CTk()
         self.tema()
         self.tela()
+        self.treeview_pesquisa = None  # Initialize treeview for search results
         self.janela_principal()
         self.janela.mainloop()
 
@@ -28,15 +29,14 @@ class Application:
         cadastrar_radio_button = ctk.CTkButton(master=self.janela, text="Cadastrar Rádio", width=200, command=self.janela_cadastrar_radio)
         cadastrar_radio_button.pack(pady=10)
         
-        pesquisar_radio_button = ctk.CTkButton(master=self.janela, text="Pesquisar Rádio", width=200, command=self.janela_pesquisar_radio)
+        pesquisar_radio_button = ctk.CTkButton(master=self.janela, text="Pesquisar Rádio", width=200, command=self.mostrar_frame_pesquisa)
         pesquisar_radio_button.pack(pady=10)
 
-
-          
     def janela_cadastrar_radio(self):
         cadastrar_radio_janela = ctk.CTkToplevel(self.janela)
         cadastrar_radio_janela.geometry("400x300")
         cadastrar_radio_janela.title("Cadastrar Rádio")
+        cadastrar_radio_janela.grab_set()  # Garante que esta janela esteja na frente da tela principal
 
         title_label = ctk.CTkLabel(master=cadastrar_radio_janela, text="Cadastro de Rádio", font=("Roboto", 18), text_color="white")
         title_label.pack(pady=20)
@@ -77,144 +77,122 @@ class Application:
         salvar_button.pack(pady=10)
 
     def mostrar_frame_pesquisa(self):
-
         if self.treeview_pesquisa is None:
-
-            # Treeview para exibir resultados de pesquisa
-            self.treeview_pesquisa = ttk.Treeview(self.janela, columns=("Nome", "Serial", "Local", "Status"))
+            # Treeview for displaying search results
+            self.treeview_pesquisa = ttk.Treeview(self.janela, columns=("Nome", "Serial", "Local", "Status", "Observacoes"))
             self.treeview_pesquisa.heading("#0", text="ID")
             self.treeview_pesquisa.heading("Nome", text="Nome")
             self.treeview_pesquisa.heading("Serial", text="Serial")
             self.treeview_pesquisa.heading("Local", text="Local")
             self.treeview_pesquisa.heading("Status", text="Status")
+            self.treeview_pesquisa.heading("Observacoes", text="Observacoes")
 
-            
-
+        # Clear existing items in the treeview
         for child in self.treeview_pesquisa.get_children():
             self.treeview_pesquisa.delete(child)
 
-        
-        # Preencher a Treeview com os resultados da pesquisa
+        # Fetch data from database and populate the treeview
         conn = sqlite3.connect('Sistema.db')
         cursor = conn.cursor()
         cursor.execute('SELECT * FROM radios')
         for row in cursor.fetchall():
-            self.treeview_pesquisa.insert('', 'end', text=row[0], values=(row[1], row[2], row[3], row[4]))
+            self.treeview_pesquisa.insert('', 'end', text=row[0], values=(row[1], row[2], row[3], row[4], row[5]))
         conn.close()
 
-        # Mostrar a Treeview na tela principal
+        # Display the treeview in the main window
         self.treeview_pesquisa.pack(pady=10, fill=tk.BOTH, expand=True)
 
+        # Button to show all radios
+        show_all_button = ctk.CTkButton(master=self.janela, text="Mostrar Todos os Rádios", width=200, command=self.mostrar_todos_os_radios)
+        show_all_button.pack(pady=10)
 
-        self.frame_cadastro.pack_forget()
-        self.frame_pesquisa.pack(fill=ctk.BOTH, expand=true)
-        self.frame_pesquisa.update()
-        self.janela_pesquisar_radio()
+        # Button to view details of selected radio
+        view_details_button = ctk.CTkButton(master=self.janela, text="Ver Detalhes do Rádio", width=200, command=self.ver_detalhes_radio)
+        view_details_button.pack(pady=10)
 
-    def janela_pesquisar_radio(self):
-        pesquisar_radio_janela = ctk.CTkToplevel(self.janela)
-        pesquisar_radio_janela.geometry("400x470")
-        pesquisar_radio_janela.title("Pesquisar Rádio")
+    def mostrar_todos_os_radios(self):
+        # Clear existing items in the treeview
+        for child in self.treeview_pesquisa.get_children():
+            self.treeview_pesquisa.delete(child)
 
-        title_label = ctk.CTkLabel(master=pesquisar_radio_janela, text="Pesquisar Rádio", font=("Roboto", 18), text_color="white")
-        title_label.pack(pady=20)
+        # Fetch all data from database and populate the treeview
+        conn = sqlite3.connect('Sistema.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM radios')
+        for row in cursor.fetchall():
+            self.treeview_pesquisa.insert('', 'end', text=row[0], values=(row[1], row[2], row[3], row[4], row[5]))
+        conn.close()
 
-        self.serial_pesquisa_entry = ctk.CTkEntry(master=pesquisar_radio_janela, placeholder_text="Serial do Rádio", width=300, font=("Roboto", 14))
-        self.serial_pesquisa_entry.pack(pady=5)
+    def ver_detalhes_radio(self):
+        selected_item = self.treeview_pesquisa.selection()
+        if selected_item:
+            radio_id = self.treeview_pesquisa.item(selected_item, 'text')
+            self.abrir_detalhes_radio(radio_id)
+        else:
+            messagebox.showerror(title="Erro", message="Nenhum rádio selecionado!")
 
-        def search_radio():
-            serial_pesquisa = self.serial_pesquisa_entry.get()
-            if serial_pesquisa:
-                conn = sqlite3.connect('Sistema.db')
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT * FROM radios WHERE serialRadio=?
-                ''', (serial_pesquisa,))
-                radio = cursor.fetchone()
-                conn.close()
-                if radio:
-                    resultado_label = ctk.CTkLabel(master=pesquisar_radio_janela, text=f"Nome: {radio[1]}\nSerial: {radio[2]}\nLocal: {radio[3]}\nStatus: {radio[4]}", font=("Roboto", 14), text_color="white")
-                    resultado_label.pack(pady=10)
-                    
-                    editar_button = ctk.CTkButton(master=pesquisar_radio_janela, text="Editar", width=100, command=lambda: self.janela_editar_radio(radio[0]))
-                    editar_button.pack(pady=5)
-                    
-                    excluir_button = ctk.CTkButton(master=pesquisar_radio_janela, text="Excluir", width=100, command=lambda: self.excluir_radio(radio[0], pesquisar_radio_janela))
-                    excluir_button.pack(pady=5)
-                    
-                else:
-                    messagebox.showerror(title="Erro", message="Rádio não encontrado!")
-            else:
-                messagebox.showerror(title="Erro", message="Preencha o campo de serial!")
-
-        pesquisar_button = ctk.CTkButton(master=pesquisar_radio_janela, text="Pesquisar", width=200, command=search_radio)
-        pesquisar_button.pack(pady=10)
-
-    def janela_editar_radio(self, radio_id):
-        editar_radio_janela = ctk.CTkToplevel(self.janela)
-        editar_radio_janela.geometry("400x300")
-        editar_radio_janela.title("Editar Rádio")
+    def abrir_detalhes_radio(self, radio_id):
+        detalhes_radio_janela = ctk.CTkToplevel(self.janela)
+        detalhes_radio_janela.geometry("400x300")
+        detalhes_radio_janela.title("Detalhes do Rádio")
 
         conn = sqlite3.connect('Sistema.db')
         cursor = conn.cursor()
-        cursor.execute('''
-            SELECT * FROM radios WHERE id=?
-        ''', (radio_id,))
+        cursor.execute('SELECT * FROM radios WHERE id=?', (radio_id,))
         radio = cursor.fetchone()
         conn.close()
 
-        title_label = ctk.CTkLabel(master=editar_radio_janela, text="Editar Rádio", font=("Roboto", 18), text_color="white")
+        title_label = ctk.CTkLabel(master=detalhes_radio_janela, text="Detalhes do Rádio", font=("Roboto", 18), text_color="white")
         title_label.pack(pady=20)
 
-        self.nome_radio_entry = ctk.CTkEntry(master=editar_radio_janela, placeholder_text="Nome do Rádio", width=300, font=("Roboto", 14))
-        self.nome_radio_entry.insert(0, radio[1])
-        self.nome_radio_entry.pack(pady=5)
+        nome_label = ctk.CTkLabel(master=detalhes_radio_janela, text=f"Nome: {radio[1]}", font=("Roboto", 14), text_color="white")
+        nome_label.pack(pady=5)
 
-        self.serial_radio_entry = ctk.CTkEntry(master=editar_radio_janela, placeholder_text="Serial do Rádio", width=300, font=("Roboto", 14))
-        self.serial_radio_entry.insert(0, radio[2])
-        self.serial_radio_entry.pack(pady=5)
+        serial_label = ctk.CTkLabel(master=detalhes_radio_janela, text=f"Serial: {radio[2]}", font=("Roboto", 14), text_color="white")
+        serial_label.pack(pady=5)
 
-        self.local_radio_entry = ctk.CTkEntry(master=editar_radio_janela, placeholder_text="Local do Rádio", width=300, font=("Roboto", 14))
-        self.local_radio_entry.insert(0, radio[3])
-        self.local_radio_entry.pack(pady=5)
+        local_label = ctk.CTkLabel(master=detalhes_radio_janela, text=f"Local: {radio[3]}", font=("Roboto", 14), text_color="white")
+        local_label.pack(pady=5)
 
-        self.status_radio_entry = ctk.CTkEntry(master=editar_radio_janela, placeholder_text="Status do Rádio", width=300, font=("Roboto", 14))
-        self.status_radio_entry.insert(0, radio[4])
-        self.status_radio_entry.pack(pady=5)
+        status_label = ctk.CTkLabel(master=detalhes_radio_janela, text=f"Status: {radio[4]}", font=("Roboto", 14), text_color="white")
+        status_label.pack(pady=5)
 
-        def update_radio():
-            nome_radio = self.nome_radio_entry.get()
-            serial_radio = self.serial_radio_entry.get()
-            local_radio = self.local_radio_entry.get()
-            status_radio = self.status_radio_entry.get()
+        observacoes_entry = ctk.CTkEntry(master=detalhes_radio_janela, placeholder_text="Observações", width=300, font=("Roboto", 14))
+        observacoes_entry.pack(pady=10)
 
-            if nome_radio and serial_radio and local_radio and status_radio:
+        def salvar_observacoes():
+            observacoes = observacoes_entry.get()
+            if observacoes:
                 conn = sqlite3.connect('Sistema.db')
                 cursor = conn.cursor()
-                cursor.execute('''
-                    UPDATE radios SET nomeRadio=?, serialRadio=?, localRadio=?, status=? WHERE id=?
-                ''', (nome_radio, serial_radio, local_radio, status_radio, radio_id))
+                cursor.execute('UPDATE radios SET observacoes=? WHERE id=?', (observacoes, radio_id))
                 conn.commit()
                 conn.close()
-                messagebox.showinfo(title="Atualização", message="Rádio atualizado com sucesso!")
-                editar_radio_janela.destroy()
+                messagebox.showinfo(title="Salvo", message="Observações salvas com sucesso!")
+                detalhes_radio_janela.destroy()
             else:
-                messagebox.showerror(title="Erro", message="Preencha todos os campos!")
+                messagebox.showerror(title="Erro", message="Observações não podem estar vazias!")
 
-        salvar_button = ctk.CTkButton(master=editar_radio_janela, text="Salvar", width=200, command=update_radio)
+        salvar_button = ctk.CTkButton(master=detalhes_radio_janela, text="Salvar", width=200, command=salvar_observacoes)
         salvar_button.pack(pady=10)
 
-    def excluir_radio(self, radio_id, janela):
-        conn = sqlite3.connect('Sistema.db')
-        cursor = conn.cursor()
-        cursor.execute('''
-            DELETE FROM radios WHERE id=?
-        ''', (radio_id,))
-        conn.commit()
-        conn.close()
-        messagebox.showinfo(title="Exclusão", message="Rádio excluído com sucesso!")
-        janela.destroy()
+# Cria a tabela no banco de dados se ainda não existir
+def inicializar_banco_de_dados():
+    conn = sqlite3.connect('Sistema.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS radios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nomeRadio TEXT,
+            serialRadio TEXT,
+            localRadio TEXT,
+            status TEXT,
+            observacoes TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
-# Executar apenas se este arquivo for o principal
 if __name__ == "__main__":
-    Application()
+    inicializar_banco_de_dados()
+    app = Application()

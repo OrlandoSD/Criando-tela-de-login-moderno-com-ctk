@@ -12,15 +12,16 @@ def inicializar_banco():
         senha TEXT NOT NULL
     )
     ''')
-    # Criação da tabela de rádios
-    c.execute('''
+     # Create radios table if not exists
+    cursor.execute('''
     CREATE TABLE IF NOT EXISTS radios (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nome TEXT NOT NULL,
-        cidade TEXT NOT NULL,
-        estado TEXT NOT NULL,
-        frequencia REAL NOT NULL
-    )
+        nomeRadio TEXT NOT NULL,
+        serialRadio TEXT NOT NULL,
+        localRadio TEXT NOT NULL,
+        status TEXT NOT NULL,
+        observacoes TEXT NOT NULL
+        )
     ''')
     conn.commit()
     conn.close()
