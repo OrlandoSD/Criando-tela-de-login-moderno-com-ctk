@@ -53,28 +53,31 @@ class Application:
         self.status_radio_entry = ctk.CTkEntry(master=cadastrar_radio_janela, placeholder_text="Status do Rádio", width=300, font=("Roboto", 14))
         self.status_radio_entry.pack(pady=5)
 
-        def save_radio():
-            nome_radio = self.nome_radio_entry.get()
-            serial_radio = self.serial_radio_entry.get()
-            local_radio = self.local_radio_entry.get()
-            status_radio = self.status_radio_entry.get()
+        self.observacoes_entry = ctk.CTkEntry(master=cadastrar_radio_janela, placeholder_text="Observações", width=300, font=("Roboto", 14))
+        self.observacoes_entry.pack(pady=5)
 
-            if nome_radio and serial_radio and local_radio and status_radio:
-                conn = sqlite3.connect('Sistema.db')
-                cursor = conn.cursor()
-                cursor.execute('''
-                    INSERT INTO radios (nomeRadio, serialRadio, localRadio, status)
-                    VALUES (?, ?, ?, ?)
-                ''', (nome_radio, serial_radio, local_radio, status_radio))
-                conn.commit()
-                conn.close()
-                messagebox.showinfo(title="Cadastro", message="Rádio cadastrado com sucesso!")
-                cadastrar_radio_janela.destroy()
-            else:
-                messagebox.showerror(title="Erro", message="Preencha todos os campos!")
+    def save_radio():
+        nome_radio = self.nome_radio_entry.get()
+        serial_radio = self.serial_radio_entry.get()
+        local_radio = self.local_radio_entry.get()
+        status_radio = self.status_radio_entry.get()
+        observacoes = self.observacoes_entry.get()  # Adicione esta linha para obter as observações
 
-        salvar_button = ctk.CTkButton(master=cadastrar_radio_janela, text="Salvar", width=200, command=save_radio)
-        salvar_button.pack(pady=10)
+        if nome_radio and serial_radio and local_radio and status_radio and observacoes:  # Correção aqui
+            conn = sqlite3.connect('Sistema.db')
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO radios (nomeRadio, serialRadio, localRadio, status, observacoes)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (nome_radio, serial_radio, local_radio, status_radio, observacoes))
+            conn.commit()
+            conn.close()
+            messagebox.showinfo(title="Cadastro", message="Rádio cadastrado com sucesso!")
+            cadastrar_radio_janela.destroy()
+        else:
+            messagebox.showerror(title="Erro", message="Preencha todos os campos!")
+
+
 
     def mostrar_frame_pesquisa(self):
         if self.treeview_pesquisa is None:
@@ -102,13 +105,12 @@ class Application:
         # Display the treeview in the main window
         self.treeview_pesquisa.pack(pady=10, fill=tk.BOTH, expand=True)
 
+        # Bind double-click event to open radio details
+        self.treeview_pesquisa.bind("<Double-1>", self.on_treeview_double_click)
+
         # Button to show all radios
         show_all_button = ctk.CTkButton(master=self.janela, text="Mostrar Todos os Rádios", width=200, command=self.mostrar_todos_os_radios)
         show_all_button.pack(pady=10)
-
-        # Button to view details of selected radio
-        view_details_button = ctk.CTkButton(master=self.janela, text="Ver Detalhes do Rádio", width=200, command=self.ver_detalhes_radio)
-        view_details_button.pack(pady=10)
 
     def mostrar_todos_os_radios(self):
         # Clear existing items in the treeview
@@ -123,18 +125,16 @@ class Application:
             self.treeview_pesquisa.insert('', 'end', text=row[0], values=(row[1], row[2], row[3], row[4], row[5]))
         conn.close()
 
-    def ver_detalhes_radio(self):
-        selected_item = self.treeview_pesquisa.selection()
-        if selected_item:
-            radio_id = self.treeview_pesquisa.item(selected_item, 'text')
-            self.abrir_detalhes_radio(radio_id)
-        else:
-            messagebox.showerror(title="Erro", message="Nenhum rádio selecionado!")
+    def on_treeview_double_click(self, event):
+        item = self.treeview_pesquisa.selection()[0]
+        radio_id = self.treeview_pesquisa.item(item, "text")
+        self.abrir_detalhes_radio(radio_id)
 
     def abrir_detalhes_radio(self, radio_id):
         detalhes_radio_janela = ctk.CTkToplevel(self.janela)
         detalhes_radio_janela.geometry("400x300")
         detalhes_radio_janela.title("Detalhes do Rádio")
+        detalhes_radio_janela.grab_set()
 
         conn = sqlite3.connect('Sistema.db')
         cursor = conn.cursor()
@@ -157,42 +157,25 @@ class Application:
         status_label = ctk.CTkLabel(master=detalhes_radio_janela, text=f"Status: {radio[4]}", font=("Roboto", 14), text_color="white")
         status_label.pack(pady=5)
 
+        observacoes_label = ctk.CTkLabel(master=detalhes_radio_janela, text="Observações:", font=("Roboto", 14), text_color="white")
+        observacoes_label.pack(pady=10)
+
         observacoes_entry = ctk.CTkEntry(master=detalhes_radio_janela, placeholder_text="Observações", width=300, font=("Roboto", 14))
+        observacoes_entry.insert(0, radio[5] if radio[5] else "")
         observacoes_entry.pack(pady=10)
 
         def salvar_observacoes():
             observacoes = observacoes_entry.get()
-            if observacoes:
-                conn = sqlite3.connect('Sistema.db')
-                cursor = conn.cursor()
-                cursor.execute('UPDATE radios SET observacoes=? WHERE id=?', (observacoes, radio_id))
-                conn.commit()
-                conn.close()
-                messagebox.showinfo(title="Salvo", message="Observações salvas com sucesso!")
-                detalhes_radio_janela.destroy()
-            else:
-                messagebox.showerror(title="Erro", message="Observações não podem estar vazias!")
+            conn = sqlite3.connect('Sistema.db')
+            cursor = conn.cursor()
+            cursor.execute('UPDATE radios SET observacoes=? WHERE id=?', (observacoes, radio_id))
+            conn.commit()
+            conn.close()
+            messagebox.showinfo(title="Salvo", message="Observações salvas com sucesso!")
+            detalhes_radio_janela.destroy()
 
         salvar_button = ctk.CTkButton(master=detalhes_radio_janela, text="Salvar", width=200, command=salvar_observacoes)
         salvar_button.pack(pady=10)
 
-# Cria a tabela no banco de dados se ainda não existir
-def inicializar_banco_de_dados():
-    conn = sqlite3.connect('Sistema.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS radios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nomeRadio TEXT,
-            serialRadio TEXT,
-            localRadio TEXT,
-            status TEXT,
-            observacoes TEXT
-        )
-    ''')
-    conn.commit()
-    conn.close()
-
 if __name__ == "__main__":
-    inicializar_banco_de_dados()
     app = Application()
